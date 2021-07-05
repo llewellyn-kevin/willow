@@ -2,9 +2,9 @@
 
 namespace Tests\Factories;
 
-use Willow\WillowFactory;
+use Willow\Factory;
 
-class BasicApiFactory extends WillowFactory
+class BasicApiFactory extends Factory
 {
     /**
      * Mocks a simple API response that returns a quote.
