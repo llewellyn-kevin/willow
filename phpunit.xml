@@ -1,0 +1,7 @@
+<phpunit>
+    <testsuites>
+        <testsuite name="Willow Test Suite">
+            <directory suffix=".php">./tests/</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>

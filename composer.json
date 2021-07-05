@@ -1,0 +1,20 @@
+{
+    "require-dev": {
+        "orchestra/testbench": "^6.19"
+    },
+    "autoload": {
+        "psr-4": {
+            "Willow\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": [
+            "@php vendor/bin/phpunit"
+        ]
+    }
+}
