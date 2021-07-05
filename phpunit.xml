@@ -1,7 +1,18 @@
-<phpunit>
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    backupGlobals="false"
+    backupStaticAttributes="false"
+    stopOnError="true"
+    colors="true"
+    printerClass="LimeDeck\Testing\Printer"
+>
     <testsuites>
         <testsuite name="Willow Test Suite">
             <directory suffix=".php">./tests/</directory>
         </testsuite>
     </testsuites>
+    <logging>
+        <junit outputFile="build/report.junit.xml"/>
+    </logging>
 </phpunit>
