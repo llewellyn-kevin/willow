@@ -29,6 +29,10 @@ class ComposedApiFactory extends Factory
     {
         return [
             'quote' => 'Hello there',
+            'source' => [
+                'name' => 'Ewan McGregor',
+                'age' => 32,
+            ]
         ];
     }
 }
