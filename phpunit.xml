@@ -6,6 +6,7 @@
     stopOnError="true"
     colors="true"
     printerClass="LimeDeck\Testing\Printer"
+    verbose="true"
 >
     <testsuites>
         <testsuite name="Willow Test Suite">
