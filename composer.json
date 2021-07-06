@@ -1,4 +1,7 @@
 {
+    "require": {
+        "illuminate/collections": "^8.49"
+    },
     "require-dev": {
         "orchestra/testbench": "^6.19",
         "limedeck/phpunit-detailed-printer": "^6.0"
