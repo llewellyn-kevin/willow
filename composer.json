@@ -4,7 +4,8 @@
     },
     "require-dev": {
         "orchestra/testbench": "^6.19",
-        "limedeck/phpunit-detailed-printer": "^6.0"
+        "limedeck/phpunit-detailed-printer": "^6.0",
+        "phpstan/phpstan": "^0.12.91"
     },
     "autoload": {
         "psr-4": {
