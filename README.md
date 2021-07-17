@@ -278,6 +278,8 @@ return [
     - [ ] post
     - [ ] put/patch
     - [ ] delete
+- [ ] Configure github actions, contributing.md, branding, etc.
+- [ ] Finalize all tests and ensure full coverage
 - [ ] Tag and release version 1.0
 
 ## Outstanding Questions
@@ -285,3 +287,4 @@ These are concepts that need further exploration.
 1. Is there a way to logically handle some of the more common requirements for tests? Like instead passing a date into a field when making a response, pass in a keyword like 'past' or 'future' so that it will only generate a date before or after 'now' respectively. This could help when testing to make sure only the proper models show up.
 2. Is there a way to support some kind of relationships? eg. including Laravel Models or Request Data Factories.
 3. Add the ability to specify the API in a YAML format a la something like smocker?
+4. Could you build a livewire trait that could be used as kind of a factory that grabs data from an external api
