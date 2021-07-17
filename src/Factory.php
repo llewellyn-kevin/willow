@@ -61,17 +61,16 @@ abstract class Factory
     public function make(array $attributes = []): array
     {
         if(!isset($this->count)) {
-            return $this->callAfterComposing(
-                $this->compose($this->makeSingleResponse($attributes)));
+            return $this->composeResponses($this->makeSingleResponse($attributes));
         }
 
         if($this->count < 1) {
-            return $this->callAfterComposing($this->compose([]));
+            return $this->composeResponses([]);
         }
 
-        return $this->callAfterComposing($this->compose(array_map(function($index) use ($attributes) {
+        return $this->composeResponses(array_map(function($index) use ($attributes) {
             return $this->makeSingleResponse($attributes);
-        }, range(1, $this->count))));
+        }, range(1, $this->count)));
     }
 
     /**
@@ -83,6 +82,17 @@ abstract class Factory
     private function makeSingleResponse(array $attributes): array
     {
         return $this->callAfterMaking($this->setOverrides($this->definition(), $attributes));
+    }
+
+    /**
+     * Composes the individual responses into one API response according to the users specifications.
+     * @param array $responses
+     *
+     * @return array
+     */
+    private function composeResponses(array $responses): array
+    {
+        return $this->callAfterComposing($this->compose($responses));
     }
 
     /**
