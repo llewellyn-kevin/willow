@@ -94,9 +94,6 @@ class FakeApi extends Factory
     /**
      * Determines how the API response data should be formatted before
      * being returned.
-     * @param array $generated
-     *
-     * @return array
      */
     public function compose(array $generated): array
     {
@@ -107,8 +104,8 @@ class FakeApi extends Factory
     }
 
     /**
-     * Mocks a simple API response that returns a quote.
-     * @return array
+     * Defines how each resource from the API should be constructed. Could be modified to also
+     * just return an instance of a request data factory, to use that definition instead.
      */
     public function definition(): array
     {
@@ -128,6 +125,13 @@ Request Data Factories are simple classes. They function like an API factory, bu
 no lifecycle hooks, counts, or different methods for accessing. They merely have a definition
 method and Faker instance.
 
+Potentially add a field that allows the user to make an 'id' field optional. This likely won't
+actually be needed, request data for mocked calls rarely needs to be that accurate, but POST
+requests usually won't want an ID, but PUT/DELETE does. Maybe nothing that specific, maybe allow
+the user to mark any field as optional and just pass in an array of optional fields to include.
+But again, this is probably overthinking things. This data doesn't actually get sent anywhere, it
+just gets spat back out at the user.
+
 ```php
 <?php
 
@@ -138,8 +142,9 @@ use Willow\RequestDataFactory;
 class Person extends RequestDataFactory
 {
     /**
-     * Mocks a person object that can be used for an external API request.
-     * @return array
+     * Defines how to generate an API request or response representing a model. Can
+     * be used for generating POST requests or even used as the definition of an API
+     * factory.
      */
     public function definition(): array
     {
@@ -150,3 +155,8 @@ class Person extends RequestDataFactory
     }
 }
 ```
+
+## Outstanding Questions
+These are concepts that need further exploration.
+1. Is there a way to logically handle some of the more common requirements for tests? Like instead passing a date into a field when making a response, pass in a keyword like 'past' or 'future' so that it will only generate a date before or after 'now' respectively. This could help when testing to make sure only the proper models show up.
+2. Is there a way to support some kind of relationships? eg. including Laravel Models or Request Data Factories.
