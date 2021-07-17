@@ -70,6 +70,10 @@ WillowFactory::fakeApi()->count(3)->sendsPerson()->delete();
 WillowFactory::fakeApi()->count(3)->sendsPerson()->afterMaking(function(array $data) {
     $data['value']++;
 })->post();
+
+// Can force a fail response from any action.
+WillowFactory::fakeApi()->fail()->show();
+WillowFactory::fakeApi()->fail()->sendsPerson()->delete();
 ```
 
 ### Factory Definition
@@ -92,6 +96,13 @@ class FakeApi extends Factory
     protected static $accessor = 'fakeApi';
 
     /**
+     * By default the factories return an array. If this is set to true (or the default is changed
+     * in the config) then the array will be json encoded before beign returned.
+     * @var bool
+     */
+    protected static $asJson = false;
+
+    /**
      * Determines how the API response data should be formatted before
      * being returned.
      */
@@ -104,10 +115,59 @@ class FakeApi extends Factory
     }
 
     /**
+     * You can create a composition for a specific method insead of using the default.
+     */
+    public function deleteCompose(array $generated): array
+    {
+        return [
+            'status' => 204,
+            'message' => 'resource has been deleted',
+        ];
+    }
+
+    /**
+     * This is used when defined if the user specifies the API should return an error response.
+     * This allows the user to
+     */
+    public function failed(array $generated): array
+    {
+        return [
+            'status' => 503,
+            'message' => 'Service unavailable',
+        ];
+    }
+
+    /**
+     * Can override the default failure response for a specific request method.
+     */
+    public function deleteFailed(array $generated): array
+    {
+        return [
+            'status' => 503,
+            'message' => 'Service unavailable',
+            'id' => 2001,
+        ];
+    }
+
+    /**
      * Defines how each resource from the API should be constructed. Could be modified to also
      * just return an instance of a request data factory, to use that definition instead.
      */
     public function definition(): array
+    {
+        return [
+            'quote' => $this->faker->bs(),  // The class has a faker instance.
+            'source' => [
+                'name' => $this->faker->name(),
+                'age' => rand(21, 65),
+            ]
+        ];
+    }
+
+    /**
+     * You can create a definition for a specific action to use instead of the default.
+     */
+    public function postDefinition(): array
     {
         return [
             'quote' => $this->faker->bs(),  // The class has a faker instance.
@@ -156,7 +216,72 @@ class Person extends RequestDataFactory
 }
 ```
 
+### Artisan Commands
+The following artisan commands should be supported for managing factories.
+
+Create a new factory:
+```bash
+$ php artisan willow:make FakeApi/Person
+$ php artisan willow:touch fake-api.person
+```
+
+Create a factory with stubs for specific actions:
+```bash
+$ php artisan willow:make FakeApi/Person --crud
+Create custom actions stubs for show(r), post(c), put(u), and delete(d)
+$ php artisan willow:touch fake-api.person --d
+Create custom action stub for delete(d)
+```
+
+Move an existing factory:
+```bash
+$ php artisan willow:rename FakeApi/Person FakeApi/User
+$ php artisan willow:mv fake-api.person fake-api.user
+```
+
+Delete a factory:
+```bash
+$ php artisan willow:delete FakeApi/Person
+$ php artisan willow:rm fake-api.person
+```
+
+### Config
+Default config file
+
+```php
+<?php
+
+return [
+    'locations' => [
+        'api' => '',        // default location for api factories
+        'request' => '',    // default location for request data factories
+    ],
+
+    'asJson' => false,      // whether or not response objects should be encoded as json
+];
+```
+
+## Roadmap
+- [x] Create parent class that can be used to define factories
+- [x] Create API for basic featureset in generating factories
+- [ ] Create a Willow facade that can be used to access factories
+    - [ ] Add and register facade
+    - [ ] Add a method handler that will look for registered api factories and return an instance
+- [ ] Basic support for artisan commands
+- [ ] The ability to support publishing code stubs/config for overrides
+- [ ] Create parent for request data factories
+    - [ ] Create class
+    - [ ] Add support for using as api factory definition
+    - [ ] Add a method handler to api factory that will attach a data factory
+- [ ] Add support for accessing a factory via different rest methods
+    - [ ] show/index (index is likely just the default)
+    - [ ] post
+    - [ ] put/patch
+    - [ ] delete
+- [ ] Tag and release version 1.0
+
 ## Outstanding Questions
 These are concepts that need further exploration.
 1. Is there a way to logically handle some of the more common requirements for tests? Like instead passing a date into a field when making a response, pass in a keyword like 'past' or 'future' so that it will only generate a date before or after 'now' respectively. This could help when testing to make sure only the proper models show up.
 2. Is there a way to support some kind of relationships? eg. including Laravel Models or Request Data Factories.
+3. Add the ability to specify the API in a YAML format a la something like smocker?
