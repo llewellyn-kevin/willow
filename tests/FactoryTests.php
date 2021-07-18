@@ -40,8 +40,12 @@ class FactoryTests extends TestCase
     public function it_overrides_defaults_with_attribute_array()
     {
         $response = (new ComposedApiFactory)->make([
-            'source.age' => 23,
-            'movie.name' => 'Star Wars',
+            'source' => [
+                'age' => 23
+            ],
+            'movie' => [
+                'name' => 'Star Wars'
+            ],
         ]);
 
         self::assertEquals(

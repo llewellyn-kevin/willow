@@ -105,10 +105,7 @@ abstract class Factory
      */
     private function setOverrides(array $data, array $overrides): array
     {
-        foreach($overrides as $key => $value) {
-            data_set($data, $key, $value);
-        }
-        return $data;
+        return array_replace_recursive($data, $overrides);
     }
 
     /**
