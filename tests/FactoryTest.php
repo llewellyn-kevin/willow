@@ -5,7 +5,7 @@ namespace Tests;
 use Tests\Factories\BasicApiFactory;
 use Tests\Factories\ComposedApiFactory;
 
-class FactoryTests extends TestCase
+class FactoryTest extends TestCase
 {
     /** @test */
     public function it_creates_a_fake_api_response()

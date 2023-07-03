@@ -1,9 +1,10 @@
 {
     "require": {
-        "illuminate/collections": "^8.49"
+        "php": "^8.1",
+        "illuminate/collections": "^10.14"
     },
     "require-dev": {
-        "orchestra/testbench": "^6.19",
+        "orchestra/testbench": "^8.5",
         "limedeck/phpunit-detailed-printer": "^6.0",
         "phpstan/phpstan": "^0.12.91"
     },

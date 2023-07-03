@@ -9,5 +9,7 @@ storage/*.key
 .env
 
 # Testing
+phpunit.xml
 .phpunit.result.cache
+.phpunit.cache
 /build/
