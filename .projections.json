@@ -1,0 +1,10 @@
+{
+    "src/*.php": {
+        "type": "source",
+        "alternate": "tests/{}Test.php"
+    },
+    "tests/*Test.php": {
+        "type": "test",
+        "alternate": "src/{}.php"
+    }
+}
