@@ -4,6 +4,7 @@ namespace Tests;
 
 use Tests\Factories\BasicApiFactory;
 use Tests\Factories\ComposedApiFactory;
+use Tests\Factories\FactoryWithResolver;
 
 class FactoryTest extends TestCase
 {
@@ -116,7 +117,7 @@ class FactoryTest extends TestCase
     public function it_calls_lifecycle_hooks_after_making_a_response()
     {
         $counter = 20;
-        $closureOne = function(array $data) use (&$counter) {
+        $closureOne = function (array $data) use (&$counter) {
             $counter++;
             $data['source']['age'] = $counter;
             return $data;
@@ -153,15 +154,15 @@ class FactoryTest extends TestCase
             $responseOne,
         );
 
-        $closureTwo = function(array $data) use (&$counter) {
+        $closureTwo = function (array $data) use (&$counter) {
             $data['source']['age'] = $counter * 2;
             return $data;
         };
         $responseTwo = (new ComposedApiFactory)
-                        ->count(3)
-                        ->afterMaking($closureOne)
-                        ->afterMaking($closureTwo)
-                        ->make();
+            ->count(3)
+            ->afterMaking($closureOne)
+            ->afterMaking($closureTwo)
+            ->make();
 
         self::assertEquals(
             [
@@ -197,7 +198,7 @@ class FactoryTest extends TestCase
     /** @test */
     public function it_calls_lifecycle_hooks_after_composing_a_response()
     {
-        $closureOne = function(array $data) {
+        $closureOne = function (array $data) {
             $data['status'] = $data['status'] + 1;
             return $data;
         };
@@ -216,7 +217,7 @@ class FactoryTest extends TestCase
             (new ComposedApiFactory)->afterComposing($closureOne)->make(),
         );
 
-        $closureTwo = function(array $data) {
+        $closureTwo = function (array $data) {
             $data['status'] = $data['status'] * 2;
             return $data;
         };
@@ -233,6 +234,30 @@ class FactoryTest extends TestCase
                 ]
             ],
             (new ComposedApiFactory)->afterComposing($closureOne)->afterComposing($closureTwo)->make(),
+        );
+    }
+
+    /** @test */
+    public function it_uses_data_resolvers()
+    {
+        $actual = (new FactoryWithResolver)->make();
+
+        $this->assertEquals(
+            ['first' => 'anna', 'duplicate' => 'anna'],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function duplicate_resolves_with_custom_data()
+    {
+        $actual = (new FactoryWithResolver)->make([
+            'first' => 'kevin',
+        ]);
+
+        $this->assertEquals(
+            ['first' => 'kevin', 'duplicate' => 'kevin'],
+            $actual,
         );
     }
 }

@@ -4,6 +4,7 @@ namespace Willow;
 
 use Closure;
 use Illuminate\Database\Eloquent\Collection;
+use Willow\Fields\Resolver;
 
 abstract class Factory
 {
@@ -32,10 +33,11 @@ abstract class Factory
      */
     abstract function definition(): array;
 
-    public function __construct(int $count = null,
-                                Collection $afterMaking = null,
-                                Collection $afterComposing = null)
-    {
+    public function __construct(
+        int $count = null,
+        Collection $afterMaking = null,
+        Collection $afterComposing = null
+    ) {
         $this->count = $count;
         $this->afterMaking = $afterMaking ?: new Collection;
         $this->afterComposing = $afterComposing ?: new Collection;
@@ -60,15 +62,15 @@ abstract class Factory
      */
     public function make(array $attributes = []): array
     {
-        if(!isset($this->count)) {
+        if (!isset($this->count)) {
             return $this->composeResponses($this->makeSingleResponse($attributes));
         }
 
-        if($this->count < 1) {
+        if ($this->count < 1) {
             return $this->composeResponses([]);
         }
 
-        return $this->composeResponses(array_map(function($index) use ($attributes) {
+        return $this->composeResponses(array_map(function ($index) use ($attributes) {
             return $this->makeSingleResponse($attributes);
         }, range(1, $this->count)));
     }
@@ -105,7 +107,7 @@ abstract class Factory
      */
     private function setOverrides(array $data, array $overrides): array
     {
-        return array_replace_recursive($data, $overrides);
+        return (new Resolver)(array_replace_recursive($data, $overrides));
     }
 
     /**
@@ -162,7 +164,7 @@ abstract class Factory
      */
     protected function callAfterMaking(array $results): array
     {
-        $this->afterMaking->each(function($callable) use (&$results) {
+        $this->afterMaking->each(function ($callable) use (&$results) {
             $results = $callable($results);
         });
         return $results;
@@ -176,7 +178,7 @@ abstract class Factory
      */
     protected function callAfterComposing(array $results): array
     {
-        $this->afterComposing->each(function($callable) use (&$results) {
+        $this->afterComposing->each(function ($callable) use (&$results) {
             $results = $callable($results);
         });
         return $results;
