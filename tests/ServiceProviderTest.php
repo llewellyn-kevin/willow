@@ -2,7 +2,6 @@
 
 namespace Tests;
 
-use Willow\Dispatcher;
 use Willow\Willow;
 
 class ServiceProviderTest extends TestCase

@@ -3,7 +3,6 @@
 namespace Tests;
 
 use Tests\RequestData\SimplePerson;
-use Willow\RequestData;
 
 class RequestDataTest extends TestCase
 {
