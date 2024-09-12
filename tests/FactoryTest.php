@@ -4,6 +4,7 @@ namespace Tests;
 
 use Tests\Factories\BasicApiFactory;
 use Tests\Factories\ComposedApiFactory;
+use Tests\Factories\FactoryUsesFaker;
 use Tests\Factories\FactoryWithResolver;
 
 class FactoryTest extends TestCase
@@ -257,6 +258,17 @@ class FactoryTest extends TestCase
 
         $this->assertEquals(
             ['first' => 'kevin', 'duplicate' => 'kevin'],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function factories_have_access_to_seedable_fakers()
+    {
+        $actual = (new FactoryUsesFaker)->seedFaker(11201)->make();
+
+        $this->assertEquals(
+            ['fake' => 'Melody Schaden'],
             $actual,
         );
     }

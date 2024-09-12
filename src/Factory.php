@@ -3,6 +3,8 @@
 namespace Willow;
 
 use Closure;
+use Faker\Factory as FakerFactory;
+use Faker\Generator;
 use Illuminate\Database\Eloquent\Collection;
 use Willow\Fields\Resolver;
 
@@ -27,6 +29,8 @@ abstract class Factory
      */
     protected Collection $afterComposing;
 
+    protected Generator $faker;
+
     /**
      * Defines the data that should be returned when make is called.
      * @return array
@@ -41,6 +45,8 @@ abstract class Factory
         $this->count = $count;
         $this->afterMaking = $afterMaking ?: new Collection;
         $this->afterComposing = $afterComposing ?: new Collection;
+
+        $this->faker = FakerFactory::create();
     }
 
 
@@ -139,6 +145,13 @@ abstract class Factory
     public function afterComposing(Closure $callback): Factory
     {
         return $this->newInstance(['afterComposing' => $this->afterComposing->push($callback)]);
+    }
+
+    public function seedFaker(int $seed): self
+    {
+        $this->faker->seed($seed);
+
+        return $this;
     }
 
     /**
