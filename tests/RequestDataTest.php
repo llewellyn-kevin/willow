@@ -15,6 +15,14 @@ class RequestDataTest extends TestCase
     }
 
     /** @test */
+    public function it_allows_setting_properties()
+    {
+        $person = (new SimplePerson)->make();
+        $person->age = 28;
+        $this->assertEquals(28, $person->toArray()['age']);
+    }
+
+    /** @test */
     public function missing_properties_default_to_null()
     {
         $person = (new SimplePerson)->make();

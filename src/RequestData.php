@@ -24,18 +24,23 @@ abstract class RequestData implements Arrayable
         return $this;
     }
 
-    private function setOverrides(array $data, array $overrides): array
+    public function toArray(): array
     {
-        return array_replace_recursive($data, $overrides);
+        return $this->data;
     }
 
-    public function __get($name)
+    public function __get($name): mixed
     {
         return $this->data[$name] ?? null;
     }
 
-    public function toArray(): array
+    public function __set($property, $value): void
     {
-        return $this->data;
+        $this->data[$property] = $value;
+    }
+
+    private function setOverrides(array $data, array $overrides): array
+    {
+        return array_replace_recursive($data, $overrides);
     }
 }
