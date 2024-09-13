@@ -6,6 +6,8 @@ use Tests\Factories\BasicApiFactory;
 use Tests\Factories\ComposedApiFactory;
 use Tests\Factories\FactoryUsesFaker;
 use Tests\Factories\FactoryWithResolver;
+use Tests\Factories\ReadsRequestFactory;
+use Tests\RequestData\SimplePerson;
 
 class FactoryTest extends TestCase
 {
@@ -269,6 +271,30 @@ class FactoryTest extends TestCase
 
         $this->assertEquals(
             ['fake' => 'Melody Schaden'],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function read_request_defaults_to_fallback_if_missing_request()
+    {
+        $actual = (new ReadsRequestFactory)->make();
+
+        $this->assertEquals(
+            ['name' => 'Ben Stiller', 'key' => 42],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function read_request_gets_data_from_request_with_overrides()
+    {
+        $actual = (new ReadsRequestFactory)
+            ->fromRequest(new SimplePerson, ['name' => 'Matt Damon'])
+            ->make();
+
+        $this->assertEquals(
+            ['name' => 'Matt Damon', 'key' => 42],
             $actual,
         );
     }

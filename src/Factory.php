@@ -10,25 +10,6 @@ use Willow\Fields\Resolver;
 
 abstract class Factory
 {
-    /**
-     * The number of records that should be generated.
-     * @var int
-     */
-    public ?int $count;
-
-    /**
-     * A set of callables that will be invoked after an instance is created.
-     * @var Collection
-     */
-    protected Collection $afterMaking;
-
-    /**
-     * A set of callables that will be invoked after all instances are created
-     * and the full response is generated.
-     * @var Collection
-     */
-    protected Collection $afterComposing;
-
     protected Generator $faker;
 
     /**
@@ -38,17 +19,17 @@ abstract class Factory
     abstract function definition(): array;
 
     public function __construct(
-        int $count = null,
-        Collection $afterMaking = null,
-        Collection $afterComposing = null
+        protected ?int $count = null,
+        protected ?Collection $afterMaking = null,
+        protected ?Collection $afterComposing = null,
+        protected ?RequestData $requestData = null,
+        protected array $requestDataOverrides = [],
     ) {
-        $this->count = $count;
         $this->afterMaking = $afterMaking ?: new Collection;
         $this->afterComposing = $afterComposing ?: new Collection;
 
         $this->faker = FakerFactory::create();
     }
-
 
     /**
      * Determines how the API response should be composed after the data is
@@ -147,6 +128,27 @@ abstract class Factory
         return $this->newInstance(['afterComposing' => $this->afterComposing->push($callback)]);
     }
 
+    /**
+     * Allows user to define a factory that gets parts of it's response from a
+     * request object.
+     */
+    protected function readRequest(string $requestKey, mixed $fallback): mixed
+    {
+        return data_get(
+            $this->requestData?->make($this->requestDataOverrides)?->toArray(),
+            $requestKey,
+            $fallback,
+        );
+    }
+
+    public function fromRequest(RequestData $request, array $overrides = []): self
+    {
+        return $this->newInstance([
+            'requestData' => $request,
+            'requestDataOverrides' => $overrides,
+        ]);
+    }
+
     public function seedFaker(int $seed): self
     {
         $this->faker->seed($seed);
@@ -166,6 +168,8 @@ abstract class Factory
             'count' => $this->count,
             'afterMaking' => $this->afterMaking,
             'afterComposing' => $this->afterComposing,
+            'requestData' => $this->requestData,
+            'requestDataOverrides' => $this->requestDataOverrides,
         ], $arguments)));
     }
 

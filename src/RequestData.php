@@ -2,7 +2,9 @@
 
 namespace Willow;
 
-abstract class RequestData
+use Illuminate\Contracts\Support\Arrayable;
+
+abstract class RequestData implements Arrayable
 {
     protected $data = [];
 
@@ -22,5 +24,10 @@ abstract class RequestData
     public function __get($name)
     {
         return $this->data[$name] ?? null;
+    }
+
+    public function toArray(): array
+    {
+        return $this->data;
     }
 }
