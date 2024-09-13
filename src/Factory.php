@@ -3,20 +3,31 @@
 namespace Willow;
 
 use Closure;
-use Faker\Factory as FakerFactory;
-use Faker\Generator;
 use Illuminate\Database\Eloquent\Collection;
+use Willow\Concerns\HasFaker;
 use Willow\Fields\Resolver;
 
 abstract class Factory
 {
-    protected Generator $faker;
+    use HasFaker;
+
+    /** OVERRIDES */
 
     /**
      * Defines the data that should be returned when make is called.
-     * @return array
      */
     abstract function definition(): array;
+
+    /**
+     * Determines how the API response should be composed after the data is
+     * generated. Override to create response shells, status codes, etc.
+     */
+    public function compose(array $generated): array
+    {
+        return $generated;
+    }
+
+    /** INTERNAL */
 
     public function __construct(
         protected ?int $count = null,
@@ -28,24 +39,12 @@ abstract class Factory
         $this->afterMaking = $afterMaking ?: new Collection;
         $this->afterComposing = $afterComposing ?: new Collection;
 
-        $this->faker = FakerFactory::create();
+        $this->bootHasFaker();
     }
 
     /**
-     * Determines how the API response should be composed after the data is
-     * generated.
-     * @param array $generated
-     *
-     * @return array
-     */
-    public function compose(array $generated): array
-    {
-        return $generated;
-    }
-
-    /**
-     * Composes a fake API response using the user defined definition and returns the result.
-     * @return array
+     * Composes a fake API response using the user defined definition and returns
+     * the result.
      */
     public function make(array $attributes = []): array
     {
@@ -62,71 +61,44 @@ abstract class Factory
         }, range(1, $this->count)));
     }
 
-    /**
-     * Creates some data from the provided definition and attribute overrides.
-     * @param array $attributes
-     *
-     * @return array
-     */
-    private function makeSingleResponse(array $attributes): array
-    {
-        return $this->callAfterMaking($this->setOverrides($this->definition(), $attributes));
-    }
-
-    /**
-     * Composes the individual responses into one API response according to the users specifications.
-     * @param array $responses
-     *
-     * @return array
-     */
-    private function composeResponses(array $responses): array
-    {
-        return $this->callAfterComposing($this->compose($responses));
-    }
-
-    /**
-     * Takes overrides provided by the consumer of the factory and applies
-     * them to the generated data.
-     * @param array $data
-     * @param array $overrides
-     *
-     * @return array
-     */
-    private function setOverrides(array $data, array $overrides): array
-    {
-        return (new Resolver)(array_replace_recursive($data, $overrides));
-    }
+    /** USER FLUENT CONFIGURATION */
 
     /**
      * Configures how many instances should be generated when response is made.
-     * @param int $number
      */
-    public function count(int $number)
+    public function count(int $number): static
     {
         return $this->newInstance(['count' => $number]);
     }
 
     /**
      * Add a callback for after each response object is generated.
-     * @param Closure $callback
-     *
-     * @return Factory
      */
-    public function afterMaking(Closure $callback): Factory
+    public function afterMaking(Closure $callback): static
     {
         return $this->newInstance(['afterMaking' => $this->afterMaking->push($callback)]);
     }
 
     /**
      * Add a callback for after all the response objects are generated and composted.
-     * @param Closure $callback
-     *
-     * @return Factory
      */
-    public function afterComposing(Closure $callback): Factory
+    public function afterComposing(Closure $callback): static
     {
         return $this->newInstance(['afterComposing' => $this->afterComposing->push($callback)]);
     }
+
+    /**
+     * Use a request data object to inform response generation.
+     */
+    public function fromRequest(RequestData $request, array $overrides = []): static
+    {
+        return $this->newInstance([
+            'requestData' => $request,
+            'requestDataOverrides' => $overrides,
+        ]);
+    }
+
+    /** UTILITIES */
 
     /**
      * Allows user to define a factory that gets parts of it's response from a
@@ -141,28 +113,9 @@ abstract class Factory
         );
     }
 
-    public function fromRequest(RequestData $request, array $overrides = []): self
-    {
-        return $this->newInstance([
-            'requestData' => $request,
-            'requestDataOverrides' => $overrides,
-        ]);
-    }
+    /** IMPLEMENTATION DETAILS */
 
-    public function seedFaker(int $seed): self
-    {
-        $this->faker->seed($seed);
-
-        return $this;
-    }
-
-    /**
-     * Generates an instance of the factory with the given arguments.
-     * @param array $arguments
-     *
-     * @return Factory
-     */
-    protected function newInstance(array $arguments): Factory
+    private function newInstance(array $arguments): static
     {
         return new static(...array_values(array_merge([
             'count' => $this->count,
@@ -173,13 +126,22 @@ abstract class Factory
         ], $arguments)));
     }
 
-    /**
-     * Invokes all of the callables provided by the user for this lifecycle hook.
-     * @param array $results
-     *
-     * @return array
-     */
-    protected function callAfterMaking(array $results): array
+    private function makeSingleResponse(array $attributes): array
+    {
+        return $this->callAfterMaking($this->setOverrides($this->definition(), $attributes));
+    }
+
+    private function composeResponses(array $responses): array
+    {
+        return $this->callAfterComposing($this->compose($responses));
+    }
+
+    private function setOverrides(array $data, array $overrides): array
+    {
+        return (new Resolver)(array_replace_recursive($data, $overrides));
+    }
+
+    private function callAfterMaking(array $results): array
     {
         $this->afterMaking->each(function ($callable) use (&$results) {
             $results = $callable($results);
@@ -187,13 +149,7 @@ abstract class Factory
         return $results;
     }
 
-    /**
-     * Invokes all of the callables provided by the user for this lifecycle hook.
-     * @param array $results
-     *
-     * @return array
-     */
-    protected function callAfterComposing(array $results): array
+    private function callAfterComposing(array $results): array
     {
         $this->afterComposing->each(function ($callable) use (&$results) {
             $results = $callable($results);

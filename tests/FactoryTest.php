@@ -287,6 +287,19 @@ class FactoryTest extends TestCase
     }
 
     /** @test */
+    public function read_request_gets_data_from_request()
+    {
+        $actual = (new ReadsRequestFactory)
+            ->fromRequest(new SimplePerson)
+            ->make();
+
+        $this->assertEquals(
+            ['name' => 'John Wick', 'key' => 42],
+            $actual,
+        );
+    }
+
+    /** @test */
     public function read_request_gets_data_from_request_with_overrides()
     {
         $actual = (new ReadsRequestFactory)

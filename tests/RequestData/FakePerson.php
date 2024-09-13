@@ -8,12 +8,12 @@ use Willow\RequestData;
  * @property string $name
  * @property int $age
  */
-class SimplePerson extends RequestData
+class FakePerson extends RequestData
 {
     public function definition(): array
     {
         return [
-            'name' => 'John Wick',
+            'name' => $this->faker->name(),
             'age' => 42,
         ];
     }

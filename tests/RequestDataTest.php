@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use Tests\RequestData\FakePerson;
 use Tests\RequestData\SimplePerson;
 
 class RequestDataTest extends TestCase
@@ -18,5 +19,24 @@ class RequestDataTest extends TestCase
     {
         $person = (new SimplePerson)->make();
         $this->assertNull($person->fake);
+    }
+
+    /** @test */
+    public function it_returns_data_as_array()
+    {
+        $actual = (new SimplePerson)->make()->toArray();
+        $this->assertEquals(
+            ['name' => 'John Wick', 'age' => 42],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function it_has_seedable_faker()
+    {
+        $actual = (new FakePerson)->seedFaker(11201)->make();
+
+        $this->assertEquals('Melody Schaden', $actual->name);
+        $this->assertEquals(42, $actual->age);
     }
 }
