@@ -3,8 +3,11 @@
 namespace Willow;
 
 use Closure;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection;
+use ReflectionFunction;
 use Willow\Concerns\HasFaker;
+use Willow\Exceptions\IncompatibleReturnValueException;
+use Willow\Exceptions\InvalidArgumentsException;
 use Willow\Fields\Resolver;
 
 abstract class Factory
@@ -33,6 +36,7 @@ abstract class Factory
         protected ?int $count = null,
         protected ?Collection $afterMaking = null,
         protected ?Collection $afterComposing = null,
+        protected ?Collection $sequences = null,
         protected ?RequestData $requestData = null,
         protected array $requestDataOverrides = [],
     ) {
@@ -57,39 +61,43 @@ abstract class Factory
         }
 
         return $this->composeResponses(array_map(function ($index) use ($attributes) {
-            return $this->makeSingleResponse($attributes);
+            return $this->makeSingleResponse($attributes, $index - 1);
         }, range(1, $this->count)));
     }
 
     /** USER FLUENT CONFIGURATION */
 
-    /**
-     * Configures how many instances should be generated when response is made.
-     */
+    /** Configures how many instances should be generated when response is made. */
     public function count(int $number): static
     {
         return $this->newInstance(['count' => $number]);
     }
 
-    /**
-     * Add a callback for after each response object is generated.
-     */
+    /** Add a callback for after each response object is generated. */
     public function afterMaking(Closure $callback): static
     {
         return $this->newInstance(['afterMaking' => $this->afterMaking->push($callback)]);
     }
 
-    /**
-     * Add a callback for after all the response objects are generated and composted.
-     */
+    /** Add a callback for after all the response objects are generated and composted. */
     public function afterComposing(Closure $callback): static
     {
         return $this->newInstance(['afterComposing' => $this->afterComposing->push($callback)]);
     }
 
-    /**
-     * Use a request data object to inform response generation.
-     */
+    /** Set overrides that will play in a sequence. */
+    public function sequence(array|callable $sequence): static
+    {
+        if (is_array($sequence)) {
+            $sequence = $this->arrayAsSequence($sequence);
+        }
+
+        return $this->newInstance([
+            'sequences' => $this->sequences?->push($sequence) ?? collect([$sequence]),
+        ]);
+    }
+
+    /** Use a request data object to inform response generation. */
     public function fromRequest(RequestData $request, array $overrides = []): static
     {
         return $this->newInstance([
@@ -99,6 +107,14 @@ abstract class Factory
     }
 
     /** UTILITIES */
+
+    protected function arrayAsSequence(array $array)
+    {
+        return function (int $index) use ($array) {
+            $itemCount = count($array);
+            return $array[$index % $itemCount];
+        };
+    }
 
     /**
      * Allows user to define a factory that gets parts of it's response from a
@@ -121,14 +137,42 @@ abstract class Factory
             'count' => $this->count,
             'afterMaking' => $this->afterMaking,
             'afterComposing' => $this->afterComposing,
+            'sequences' => $this->sequences,
             'requestData' => $this->requestData,
             'requestDataOverrides' => $this->requestDataOverrides,
         ], $arguments)));
     }
 
-    private function makeSingleResponse(array $attributes): array
+    private function makeSingleResponse(array $attributes, int $index = 0): array
     {
-        return $this->callAfterMaking($this->setOverrides($this->definition(), $attributes));
+        $sequenceOverrides = [];
+        $this->sequences?->each(function (callable $sequence) use (&$sequenceOverrides, $index) {
+            $reflection = new ReflectionFunction($sequence);
+            $parameterCount = $reflection->getNumberOfRequiredParameters();
+            if ($parameterCount == 0) {
+                $sequenceResults = $sequence();
+            } elseif ($parameterCount == 1) {
+                $sequenceResults = $sequence($index);
+            } else {
+                throw new InvalidArgumentsException("Sequence callbacks must have 1 or fewer arguments.");
+            }
+
+            if (!is_array($sequenceResults)) {
+                $type = gettype($sequenceResults);
+                throw new IncompatibleReturnValueException("Sequence callbacks must return an 'array'. Got '$type'.");
+            }
+
+            $sequenceOverrides = array_replace_recursive($sequenceOverrides, $sequenceResults);
+        });
+
+        $attributes = array_replace_recursive($sequenceOverrides, $attributes);
+
+        return $this->callAfterMaking(
+            $this->setOverrides(
+                $this->definition(),
+                $attributes,
+            ),
+        );
     }
 
     private function composeResponses(array $responses): array

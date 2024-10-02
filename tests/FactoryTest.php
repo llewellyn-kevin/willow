@@ -8,6 +8,8 @@ use Tests\Factories\FactoryUsesFaker;
 use Tests\Factories\FactoryWithResolver;
 use Tests\Factories\ReadsRequestFactory;
 use Tests\RequestData\SimplePerson;
+use Willow\Exceptions\IncompatibleReturnValueException;
+use Willow\Exceptions\InvalidArgumentsException;
 
 class FactoryTest extends TestCase
 {
@@ -309,6 +311,173 @@ class FactoryTest extends TestCase
         $this->assertEquals(
             ['name' => 'Matt Damon', 'key' => 42],
             $actual,
+        );
+    }
+
+    /** @test */
+    public function array_sequences_override_values_in_order()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence([
+                ['quote' => 'First quote'],
+                ['quote' => 'Second quote'],
+            ])
+            ->count(2)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'First quote'],
+                ['quote' => 'Second quote'],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function array_sequence_repeats_when_count_is_higher_than_elements()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence([
+                ['quote' => 'First quote'],
+                ['quote' => 'Second quote'],
+            ])
+            ->count(4)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'First quote'],
+                ['quote' => 'Second quote'],
+                ['quote' => 'First quote'],
+                ['quote' => 'Second quote'],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function function_sequences_work()
+    {
+        $i = 0;
+        $actual = (new BasicApiFactory)
+            ->sequence(function () use (&$i) {
+                $i = $i + 1;
+                return ['quote' => "Quote $i"];
+            })
+            ->count(3)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'Quote 1'],
+                ['quote' => 'Quote 2'],
+                ['quote' => 'Quote 3'],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function function_sequences_work_with_indexes()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence(fn (int $i) => ['quote' => "Quote $i"])
+            ->count(3)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'Quote 0'],
+                ['quote' => 'Quote 1'],
+                ['quote' => 'Quote 2'],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function sequences_can_append_values()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence(fn (int $i) => ['appended' => $i])
+            ->count(3)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'Hello there', 'appended' => 0],
+                ['quote' => 'Hello there', 'appended' => 1],
+                ['quote' => 'Hello there', 'appended' => 2],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function sequence_values_are_overridden_by_make_values()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence(fn (int $i) => ['appended' => $i])
+            ->count(3)
+            ->make(['appended' => 5]);
+
+        self::assertEquals(
+            [
+                ['quote' => 'Hello there', 'appended' => 5],
+                ['quote' => 'Hello there', 'appended' => 5],
+                ['quote' => 'Hello there', 'appended' => 5],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function later_sequences_override_earlier_ones()
+    {
+        $actual = (new BasicApiFactory)
+            ->sequence(fn () => ['appended' => 0])
+            ->sequence(fn (int $i) => ['appended' => $i])
+            ->count(3)
+            ->make();
+
+        self::assertEquals(
+            [
+                ['quote' => 'Hello there', 'appended' => 0],
+                ['quote' => 'Hello there', 'appended' => 1],
+                ['quote' => 'Hello there', 'appended' => 2],
+            ],
+            $actual,
+        );
+    }
+
+    /** @test */
+    public function it_throws_an_exception_when_too_many_arguments_are_supplied()
+    {
+        $this->assertThrows(
+            function () {
+                (new BasicApiFactory)
+                    ->sequence(fn (int $i, int $j) => ['quote' => "Quote $i $j"])
+                    ->count(3)
+                    ->make();
+            },
+            InvalidArgumentsException::class,
+            "Invalid arguments used in anonymous function. Sequence callbacks must have 1 or fewer arguments.",
+        );
+    }
+
+    /** @test */
+    public function it_throws_an_exception_when_return_value_is_not_array()
+    {
+        $this->assertThrows(
+            function () {
+                (new BasicApiFactory)
+                    ->sequence(fn (int $i) => "Quote $i")
+                    ->count(3)
+                    ->make();
+            },
+            IncompatibleReturnValueException::class,
+            "Sequence callbacks must return an 'array'. Got 'string'.",
         );
     }
 }
