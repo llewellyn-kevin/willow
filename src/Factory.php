@@ -42,6 +42,7 @@ abstract class Factory
     ) {
         $this->afterMaking = $afterMaking ?: new Collection;
         $this->afterComposing = $afterComposing ?: new Collection;
+        $this->sequences = $sequences ?: new Collection;
 
         $this->bootHasFaker();
     }
@@ -76,13 +77,17 @@ abstract class Factory
     /** Add a callback for after each response object is generated. */
     public function afterMaking(Closure $callback): static
     {
-        return $this->newInstance(['afterMaking' => $this->afterMaking->push($callback)]);
+        return $this->newInstance([
+            'afterMaking' => $this->afterMaking->push($callback),
+        ]);
     }
 
     /** Add a callback for after all the response objects are generated and composted. */
     public function afterComposing(Closure $callback): static
     {
-        return $this->newInstance(['afterComposing' => $this->afterComposing->push($callback)]);
+        return $this->newInstance([
+            'afterComposing' => $this->afterComposing->push($callback),
+        ]);
     }
 
     /** Set overrides that will play in a sequence. */
@@ -93,7 +98,7 @@ abstract class Factory
         }
 
         return $this->newInstance([
-            'sequences' => $this->sequences?->push($sequence) ?? collect([$sequence]),
+            'sequences' => $this->sequences->push($sequence),
         ]);
     }
 
@@ -146,7 +151,7 @@ abstract class Factory
     private function makeSingleResponse(array $attributes, int $index = 0): array
     {
         $sequenceOverrides = [];
-        $this->sequences?->each(function (callable $sequence) use (&$sequenceOverrides, $index) {
+        $this->sequences->each(function (callable $sequence) use (&$sequenceOverrides, $index) {
             $reflection = new ReflectionFunction($sequence);
             $parameterCount = $reflection->getNumberOfRequiredParameters();
             if ($parameterCount == 0) {

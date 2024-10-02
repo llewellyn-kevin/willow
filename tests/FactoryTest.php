@@ -127,7 +127,10 @@ class FactoryTest extends TestCase
             $data['source']['age'] = $counter;
             return $data;
         };
-        $responseOne = (new ComposedApiFactory)->count(3)->afterMaking($closureOne)->make();
+        $responseOne = (new ComposedApiFactory)
+            ->count(3)
+            ->afterMaking($closureOne)
+            ->make();
 
         self::assertEquals(
             [
@@ -238,7 +241,10 @@ class FactoryTest extends TestCase
                     ]
                 ]
             ],
-            (new ComposedApiFactory)->afterComposing($closureOne)->afterComposing($closureTwo)->make(),
+            (new ComposedApiFactory)
+                ->afterComposing($closureOne)
+                ->afterComposing($closureTwo)
+                ->make(),
         );
     }
 
